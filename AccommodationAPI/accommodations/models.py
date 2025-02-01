@@ -46,13 +46,14 @@ class Article(BaseModel):
 class HouseArticle(Article):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     contact = models.CharField(max_length=100)
-    number_people = models.IntegerField()
-    deposit = models.DecimalField(max_digits=10, decimal_places=2)
-    area = models.CharField(max_length=100)
     location = models.CharField(max_length=256)
+    state = models.CharField(max_length=100, choices=ArticleStateEnum.choices(), default=ArticleStateEnum.PENDING.name)
+
+
+class AddressHouseArticle(models.Model):
+    house = models.ForeignKey(HouseArticle, on_delete=models.CASCADE)
     longitude = models.DecimalField(max_digits=30, decimal_places=14)
     latitude = models.DecimalField(max_digits=30, decimal_places=14)
-    state = models.CharField(max_length=100, choices=ArticleStateEnum.choices(), default=ArticleStateEnum.PENDING.name)
 
 class ImageHouse(models.Model):
     house = models.ForeignKey(HouseArticle, on_delete=models.CASCADE)
@@ -69,10 +70,16 @@ class TypeHouse(Enum):
 
 class AcquistionArticle(HouseArticle):
     stateAcqui = models.BooleanField(default=True)
+    deposit = models.DecimalField(max_digits=10, decimal_places=2)
+    number_people = models.IntegerField( blank=True)
+    area = models.CharField(max_length=100)
     typeHouse = models.CharField(max_length=100, choices=TypeHouse.choices(), default=TypeHouse.ROOM.name)
 
 class LookingArticle(HouseArticle):
     stateLook = models.BooleanField(default=True)
+    number_people = models.IntegerField(null=True, blank=True)
+    deposit = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    area = models.CharField(max_length=256,null=True, blank=True)
 
 class AddtionallInfomaion(models.Model):
     house = models.ForeignKey(AcquistionArticle, on_delete=models.CASCADE)

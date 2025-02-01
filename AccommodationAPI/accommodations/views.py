@@ -3,7 +3,7 @@ from rest_framework import viewsets,generics,permissions,status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from accommodations import serializers
-from accommodations.models import User,HouseArticle,ImageHouse,AddtionallInfomaion,Like,AcquistionArticle,LookingArticle
+from accommodations.models import User,HouseArticle,UserEnum,ImageHouse,AddtionallInfomaion,Like,AcquistionArticle,LookingArticle
 from accommodations import perms
 class UserViewSet(viewsets.ViewSet,generics.CreateAPIView):
     queryset = User.objects.filter(is_active=True)
@@ -12,6 +12,13 @@ class UserViewSet(viewsets.ViewSet,generics.CreateAPIView):
     def get_permissions(self):
         if self.action in ['get_current_user']:
             return [permissions.IsAuthenticated()]
+        elif self.action in ['list', 'retrieve']:
+            if self.request.user.user_role == UserEnum.ADMIN.value:
+                return [perms.IsAdmin()]
+            elif self.request.user.user_role == UserEnum.INKEEPER.value:
+                return [perms.IsInnkeeper()]
+            elif self.request.user.user_role == UserEnum.TENANT.value:
+                return [perms.IsTenant()]
         return [permissions.AllowAny()]
 
     @action(methods=['get'], url_path='current-user', detail=False)
