@@ -73,6 +73,8 @@ class AcquistionArticle(HouseArticle):
     deposit = models.DecimalField(max_digits=10, decimal_places=2)
     number_people = models.IntegerField( blank=True)
     area = models.CharField(max_length=100)
+    district = models.CharField(max_length=256)
+    city = models.CharField(max_length=256)
     typeHouse = models.CharField(max_length=100, choices=TypeHouse.choices(), default=TypeHouse.ROOM.name)
 
 class LookingArticle(HouseArticle):
@@ -116,10 +118,20 @@ class Notification(BaseModel):
     def __str__(self):
         return f"Notification for {self.user.username}"
 
+
+class FollowUser(BaseModel):
+    user = models.ForeignKey(User, on_delete=models.CASCADE,)
+    followed_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='followers')
+
+    class Meta:
+        unique_together = ('user', 'followed_user')
+
+    def __str__(self):
+        return f"{self.user.username} followed {self.followed_user.username}"
+
 class Interaction(BaseModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    acquisition = models.ForeignKey(AcquistionArticle, on_delete=models.CASCADE, default=None)
-
+    house = models.ForeignKey(HouseArticle, on_delete=models.CASCADE,null=True)
     class Meta:
         abstract = True
 
@@ -127,8 +139,8 @@ class Comment(Interaction):
     content = models.TextField()
 
     def __str__(self):
-        return f"Comment from {self.user.username} for {self.acquisition.title}"
+        return f"Comment from {self.user.username} for {self.house.title}"
 
 class Like(Interaction):
     class Meta:
-        unique_together = ('user', 'acquisition')
+        unique_together = ('user', 'house')

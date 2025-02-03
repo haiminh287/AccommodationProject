@@ -11,4 +11,5 @@ route.register(r'looking-article', views.LookingArticleViewSet, basename='lookin
 route.register(r'like', views.LikeViewSet, basename='like')
 urlpatterns = [
     path('', include(route.urls)),
+    path('user-statistics/', views.UserStatisticsView.as_view(), name='user-statistics'),
 ]

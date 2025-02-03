@@ -25,7 +25,7 @@ SECRET_KEY = "django-insecure-324ogkyfzq&^glak&rk+h-sm)%2v4pf**(tu1&8(-@_bbuyi9+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['3f0f-2402-800-620c-71fe-939-ca05-e3d1-95c0.ngrok-free.app','127.0.0.1']
+ALLOWED_HOSTS = ['8d19-2402-800-620c-71fe-bcbe-d474-8604-389e.ngrok-free.app','127.0.0.1']
 
 
 # Application definition
@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "oauth2_provider",
     "corsheaders",
     "drf_yasg",
+
 
 ]
 
@@ -154,7 +155,7 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-CLIENT_ID= "6pPD7hjGBXx0Fzs1zhJBGCb8HIWGoMuHjOdxkBf4"
-CLIENT_SECRET = "bQa1vcCvwaBjr3ZZnyYCL8xjFR1Y0eMeYoLl0ElGEU6Xl8Q0rHpLEQfmoknurUxMW4WbZBx0iO9TmJuEvXRKdaQXDw3j37f9Ue7PIkjBGjbaQiDV9TFM6f6VnFAmN7pG"
+CLIENT_ID= "fxr5pZ4dFoFGUXc4TGTRwRlau55ozO16AwFAmaxW"
+CLIENT_SECRET = "EwWTG0V0dhNExLnTLTyb6pp7J85O5JZI7R0ZHWkasVcn6KYLsOPJoaEGN2YIfFRYoj1rZ5uYNizxsDHpehKwnYugzYxRBjlhC5esV0UNsPCufV8tG6i5sAB7bPwp8s7d"
 
 OAUTH2_PROVIDER = { 'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.JSONOAuthLibCore' }
