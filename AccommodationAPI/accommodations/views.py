@@ -104,7 +104,7 @@ class LikeViewSet(viewsets.ViewSet,generics.ListAPIView):
             return Response(article_serializer.data)
 
 
-class HouseArticleViewSet(viewsets.ModelViewSet):
+class HouseArticleViewSet(viewsets.ViewSet,generics.ListCreateAPIView):
     queryset = HouseArticle.objects.filter(active=True)
     serializer_class = serializers.HouseArticleSerializer
 
