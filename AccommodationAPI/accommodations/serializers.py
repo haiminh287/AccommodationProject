@@ -3,7 +3,6 @@ from accommodations.models import User,Conversation,ImageHouse,HouseArticle,Addt
 class UserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         data = validated_data.copy()
-        print("main_data",data)
         u = User(**data)
         u.set_password(u.password)
         u.save()

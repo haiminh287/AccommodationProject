@@ -13,9 +13,8 @@ def send_acquistion_notification(sender, instance, created, **kwargs):
                 username = instance.user.username
                 time = instance.created_at.strftime("%Y-%m-%d %H:%M:%S")
                 titleArticle = instance.title
-                price = instance.price
+                price = instance.deposit
                 phone = instance.user.phone
                 location = instance.location
-                description = instance.description
                 
-                send_mail(email, username, time, titleArticle, price, phone, location, description)
+                send_mail(email, username, time, titleArticle, price, phone, location)

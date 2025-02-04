@@ -57,7 +57,7 @@ def send_email(email, username, time, titleArticle, price, phone, location):
             <p><strong>Giá:</strong> {price}</p>
         </body>
         </html>
-        """.format(phone=phone, location=location, titleArticle=titleArticle, price=price, description=description)
+        """.format(phone=phone, location=location, titleArticle=titleArticle, price=price)
         
         to_address = email
         message = create_message("prolathe633@gmail.com", to_address, subject, body)

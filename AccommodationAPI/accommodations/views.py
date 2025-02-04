@@ -48,6 +48,54 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
         follow_users = FollowUser.objects.filter(user=request.user)
         return Response(serializers.FollowUserSerializer(follow_users,many=True).data)
 
+class HouseArticleViewSet(viewsets.ViewSet,generics.ListCreateAPIView):
+    queryset = HouseArticle.objects.filter(active=True)
+    serializer_class = serializers.HouseArticleSerializer
+
+    def get_queryset(self):
+        query = self.queryset
+        state = self.request.query_params.get('state')
+        print('state',state)
+        if state:
+            query = query.filter(state=state)
+        return query
+    @action(methods=['get','post'],url_path='comments',detail=True)
+    def get_comments(self,request,pk=None):
+        house = self.get_object()
+        if request.method == 'POST':
+            content = request.data.get('content')
+            comment = Comment.objects.create(user=request.user,house=house,content=content)
+            return Response(serializers.CommentSerializer(comment).data)
+        comments = self.get_object().comment_set.select_related('user').filter(active=True)
+        return Response(serializers.CommentSerializer(comments,many=True, context={'request': request}).data)
+    
+    @action(methods=['get'],url_path='address',detail=False)
+    def get_address(self,request):
+        house = self.get_object()
+        address = house.addresshousearticle_set.first()
+        return Response(serializers.AddressHouseArticleSerializer(address).data)
+    
+    @action(methods=['post'], url_path='likes', detail=True)
+    def like_acquistion(self, request, pk=None):
+        house = self.get_object()
+        liked_articles = request.session.get('liked_articles', [])
+        if request.user.is_authenticated:
+            like,created =  Like.objects.get_or_create(user=request.user,house=house)
+            if not created:
+                like.delete()
+                return Response({'status': 'UnLiked'})
+            return Response({'status': 'Liked'})
+        else:
+            if house.id in liked_articles:
+                liked_articles.remove(house.id)
+                request.session['liked_articles'] = liked_articles
+                print('articles',request.session['liked_articles'])
+                return Response({'status': 'UnLiked'})
+            else:
+                liked_articles.append(house.id)
+                print('articles dont in',request.session['liked_articles'])
+                request.session['liked_articles'] = liked_articles
+                return Response({'status': 'Liked'})
 
 class AddtionallInfomaionViewSet(viewsets.ViewSet,generics.ListCreateAPIView):
     queryset = AddtionallInfomaion.objects.all()
@@ -90,7 +138,7 @@ class LookingArticleViewSet(viewsets.ViewSet,generics.ListCreateAPIView):
     queryset = LookingArticle.objects.filter(active=True).order_by('-id')
     serializer_class = serializers.LookingArticleSerializer
     # pagination_class = paginators.ItemPaginator
-
+    
 
 class LikeViewSet(viewsets.ViewSet,generics.ListAPIView):
     serializer_class = serializers.LikeSerializer
@@ -119,47 +167,7 @@ class LikeViewSet(viewsets.ViewSet,generics.ListAPIView):
             return Response(article_serializer.data)
 
 
-class HouseArticleViewSet(viewsets.ViewSet,generics.ListCreateAPIView):
-    queryset = HouseArticle.objects.filter(active=True)
-    serializer_class = serializers.HouseArticleSerializer
 
-    @action(methods=['get','post'],url_path='comments',detail=True)
-    def get_comments(self,request,pk=None):
-        house = self.get_object()
-        if request.method == 'POST':
-            content = request.data.get('content')
-            comment = Comment.objects.create(user=request.user,house=house,content=content)
-            return Response(serializers.CommentSerializer(comment).data)
-        comments = self.get_object().comment_set.select_related('user').filter(active=True)
-        return Response(serializers.CommentSerializer(comments,many=True, context={'request': request}).data)
-    
-    @action(methods=['get'],url_path='address',detail=False)
-    def get_address(self,request):
-        house = self.get_object()
-        address = house.addresshousearticle_set.first()
-        return Response(serializers.AddressHouseArticleSerializer(address).data)
-    
-    @action(methods=['post'], url_path='likes', detail=True)
-    def like_acquistion(self, request, pk=None):
-        house = self.get_object()
-        liked_articles = request.session.get('liked_articles', [])
-        if request.user.is_authenticated:
-            like,created =  Like.objects.get_or_create(user=request.user,house=house)
-            if not created:
-                like.delete()
-                return Response({'status': 'UnLiked'})
-            return Response({'status': 'Liked'})
-        else:
-            if house.id in liked_articles:
-                liked_articles.remove(house.id)
-                request.session['liked_articles'] = liked_articles
-                print('articles',request.session['liked_articles'])
-                return Response({'status': 'UnLiked'})
-            else:
-                liked_articles.append(house.id)
-                print('articles dont in',request.session['liked_articles'])
-                request.session['liked_articles'] = liked_articles
-                return Response({'status': 'Liked'})
 
 
 class UserStatisticsView(APIView):
