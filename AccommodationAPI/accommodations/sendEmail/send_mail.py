@@ -41,74 +41,24 @@ def create_message(sender, to, subject, message_text):
     raw = raw.decode()
     return {'raw': raw}
 
-def send_email(cart, name, phone, email, address, total_amount, order_id, method_bank=None):
+def send_email(email, username, time, titleArticle, price, phone, location):
     try:
         service = get_gmail_service()
-        subject = "Thông Tin Đơn Hàng"
-        formatted_total_amount = "{:,.0f}".format(total_amount).replace(",", ".")
-        
-        method_bank_html = ""
-        if method_bank:
-            method_bank_html = f"<h1>Vui lòng thanh toán với stk: {method_bank} - Ngân hàng: MoMo</h1>"
-
-        body = f"""
+        subject = "Chủ Trọ " + username + " Đăng Bài Lúc " + time
+        body = """
         <html>
         <body>
-            <h1>Cảm ơn bạn đã đặt hàng tại Book Delta ❤️</h1>
-            <h1>Thông Tin Đơn Hàng</h1>
-            <h2>Mã Đơn Hàng: #{order_id}</h2>
-            <h2>Thông Tin Người Nhận:</h2>
-            <p><strong>Họ Tên :</strong> {name}</p>
+            <h1>Thông Tin Bài Đăng</h1>
+            <h2>Thông Tin Liên Hệ:</h2>
             <p><strong>Số Điện Thoại:</strong> {phone}</p>
-            <p><strong>Email:</strong> {email}</p>
-            <p><strong>Địa Chỉ Nhận:</strong> {address}</p>
-            <p><strong>Tổng Tiền:</strong> {formatted_total_amount} VNĐ</p>
-            {method_bank_html}
-            <h2>Chi Tiết Đơn Hàng:</h2>
-            <table class="table table-bordered table-striped table-hover"  border="1">
-                <thead class="table-dark fs-3">
-                    <tr>
-                        <th scope="col">Sản phẩm</th>
-                        <th scope="col">Đơn giá</th>
-                        <th scope="col">Số lượng</th>
-                        <th scope="col">Thành Tiền</th>
-                    </tr>
-                </thead>
-                <tbody class="fs-4">
-        """
-        for item, details in cart.items():
-            if details['is_selected']:
-                formatted_price = "{:,.0f}".format(details['price']).replace(",", ".")
-                formatted_total = "{:,.0f}".format(details['price'] * details['quantity']).replace(",", ".")
-                body += f"""
-                    <tr style="height:60px;" id="books{details['id']}">
-                        <td class="align-middle">
-                            <div class="d-flex align-items-center">
-                                <img src="{details['image']}" class="img-fluid rounded-3" style="width: 120px;height:100px;" alt="Book">
-                                <div class="flex-column ms-4">
-                                    <p class="mb-2">{details['title']}</p>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="align-middle">
-                            <p class="mb-0" style="font-weight: 500;">{formatted_price} VNĐ</p>
-                        </td>
-                        <td class="align-middle">
-                            <div class="d-flex flex-row align-items-center">
-                                <p class="fs-4 mb-0">{details['quantity']}</p>
-                            </div>
-                        </td>
-                        <td class="align-middle">
-                            <p class="mb-0" style="font-weight: 500;">{formatted_total} VNĐ</p>
-                        </td>
-                    </tr>
-                """
-        body += """
-                </tbody>
-            </table>
+            <p><strong>Địa Chỉ:</strong> {location}</p>
+            <h2>Thông Tin Bài Đăng:</h2>
+            <p><strong>Tiêu Đề:</strong> {titleArticle}</p>
+            <p><strong>Giá:</strong> {price}</p>
         </body>
         </html>
-        """
+        """.format(phone=phone, location=location, titleArticle=titleArticle, price=price, description=description)
+        
         to_address = email
         message = create_message("prolathe633@gmail.com", to_address, subject, body)
         sent_message = service.users().messages().send(userId="me", body=message).execute()

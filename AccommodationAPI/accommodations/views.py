@@ -10,6 +10,7 @@ from django.db.models.functions import TruncMonth, TruncYear, TruncQuarter
 from django.db.models import Count
 from datetime import timedelta
 from django.utils import timezone
+from accommodations import paginators
 class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
     queryset = User.objects.filter(is_active=True)
     serializer_class = serializers.UserSerializer
@@ -52,16 +53,29 @@ class AddtionallInfomaionViewSet(viewsets.ViewSet,generics.ListCreateAPIView):
     queryset = AddtionallInfomaion.objects.all()
     serializer_class = serializers.AddtionallInfomaionSerializer
 
-class AcquistionArticleViewSet(viewsets.ViewSet,generics.ListCreateAPIView):
-    queryset = AcquistionArticle.objects.filter(active=True)
+class AcquistionArticleViewSet(viewsets.ViewSet, generics.ListCreateAPIView):
+    queryset = AcquistionArticle.objects.filter(active=True).order_by('-id')
     serializer_class = serializers.AcquistionArticleSerializer
 
-
-
-    def get_permissions(self):
-        if self.action in ['post_like'] and self.request.method in ['POST']:
-            return [permissions.IsAuthenticated()]
-        return [permissions.AllowAny()]
+    def get_queryset(self):
+        query = self.queryset
+        kw = self.request.query_params.get('kw')
+        deposit = self.request.query_params.get('deposit')
+        number_people = self.request.query_params.get('number_people')
+        district = self.request.query_params.get('district')
+        province = self.request.query_params.get('province')
+        if kw:
+            query = query.filter(title__icontains=kw)
+        if deposit:
+            deposit_value = float(deposit)
+            query = query.filter(deposit__gte=deposit_value - 100, deposit__lte=deposit_value + 100)
+        if number_people:
+            query = query.filter(number_people=number_people)
+        if district:
+            query = query.filter(district__icontains=district)
+        if province:
+            query = query.filter(city__icontains=province)
+        return query
 
     @action(methods=['get'],url_path='images',detail=True)
     def get_house_images(self,request,pk=None):
@@ -73,8 +87,9 @@ class AcquistionArticleViewSet(viewsets.ViewSet,generics.ListCreateAPIView):
 
 
 class LookingArticleViewSet(viewsets.ViewSet,generics.ListCreateAPIView):
-    queryset = LookingArticle.objects.filter(active=True)
+    queryset = LookingArticle.objects.filter(active=True).order_by('-id')
     serializer_class = serializers.LookingArticleSerializer
+    # pagination_class = paginators.ItemPaginator
 
 
 class LikeViewSet(viewsets.ViewSet,generics.ListAPIView):
@@ -149,63 +164,52 @@ class HouseArticleViewSet(viewsets.ViewSet,generics.ListCreateAPIView):
 
 class UserStatisticsView(APIView):
     def get(self, request):
-        period = request.GET.get('period', 'year') 
-
-        # Xác định hàm cắt ngắn dựa trên period
-        if period == 'month':
-            trunc_func = TruncMonth
-        elif period == 'quarter':
-            trunc_func = TruncQuarter
-        elif period == 'year':
-            trunc_func = TruncYear
-        else:
+        period = request.GET.get('period', 'year')
+        trunc_func = self.get_trunc_func(period)
+        if not trunc_func:
             return Response({'error': 'Invalid period parameter'}, status=400)
-
-        # Xác định khoảng thời gian
         start_date = timezone.now() - timedelta(days=600)
         end_date = timezone.now()
-        user_statistics = User.objects.filter(date_joined__range=[start_date, end_date]) \
-            .annotate(period=trunc_func('date_joined')) \
-            .values('period') \
-            .annotate(count=Count('id')) \
-            .order_by('period')
+        user_statistics = self.get_statistics(User.objects.filter(date_joined__range=[start_date, end_date]), trunc_func, period)
+        inkeeper_statistics = self.get_statistics(User.objects.filter(date_joined__range=[start_date, end_date], user_role="Chủ Nhà Trọ"), trunc_func, period)
+        return Response({
+            'user_statistics': user_statistics,
+            'inkeeper_statistics': inkeeper_statistics
+        })
+
+    def get_trunc_func(self, period):
+        if period == 'month':
+            return TruncMonth
+        elif period == 'quarter':
+            return TruncQuarter
+        elif period == 'year':
+            return TruncYear
+        return None
+
+    def get_statistics(self, queryset, trunc_func, period):
+        statistics = queryset.annotate(period=trunc_func('date_joined')) \
+                             .values('period') \
+                             .annotate(count=Count('id')) \
+                             .order_by('period')
 
         formatted_statistics = []
-        for stat in user_statistics:
-            if period == 'month':
-                formatted_period = stat['period'].strftime('%m-%Y')
-            elif period == 'quarter':
-                quarter = (stat['period'].month - 1) // 3 + 1
-                formatted_period = f"Quý {quarter} {stat['period'].year}"
-            elif period == 'year':
-                formatted_period = stat['period'].strftime('%Y')
+        for stat in statistics:
+            formatted_period = self.format_period(stat['period'], period)
             formatted_statistics.append({
                 'period': formatted_period,
                 'count': stat['count']
             })
-        inkeeper_statistics = User.objects.filter(date_joined__range=[start_date, end_date],user_role = "Chủ Nhà Trọ") \
-                    .annotate(period=trunc_func('date_joined')) \
-                    .values('period') \
-                    .annotate(count=Count('id')) \
-                    .order_by('period')
-        
-        formatted_statistics_inkeeper = []
-        for stat in inkeeper_statistics:
-            if period == 'month':
-                formatted_period = stat['period'].strftime('%m-%Y')
-            elif period == 'quarter':
-                quarter = (stat['period'].month - 1) // 3 + 1
-                formatted_period = f"Quý {quarter} {stat['period'].year}"
-            elif period == 'year':
-                formatted_period = stat['period'].strftime('%Y')
-            formatted_statistics_inkeeper.append({
-                'period': formatted_period,
-                'count': stat['count']
-            })
-        return Response({
-            'user_statistics': formatted_statistics,
-            'inkeeper_statistics': formatted_statistics_inkeeper
-        })
+        return formatted_statistics
+
+    def format_period(self, period, period_type):
+        if period_type == 'month':
+            return period.strftime('%m-%Y')
+        elif period_type == 'quarter':
+            quarter = (period.month - 1) // 3 + 1
+            return f"Quý {quarter} {period.year}"
+        elif period_type == 'year':
+            return period.strftime('%Y')
+        return ''
     
 
 
